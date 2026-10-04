@@ -1,0 +1,2 @@
+# Para captura serial opcional. A simulacao e a analise usam apenas Python padrao.
+pyserial>=3.5,<4

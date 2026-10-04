@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+tmp/
+.venv/
+build/
+tools/vendor/
+data/simulacao/
+*.exe
