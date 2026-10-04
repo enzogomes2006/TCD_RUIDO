@@ -1,0 +1,4 @@
+origem,tecnica,modo,OK,CORROMPIDO,PERDIDO,NAO_DETECTADO,taxa_nao_deteccao
+A_MEDIR,crc8,1,,,,,
+A_MEDIR,crc8,2,,,,,
+A_MEDIR,crc8,3,,,,,
