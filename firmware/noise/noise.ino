@@ -2,7 +2,8 @@
  * ESP32 classico + Arduino-ESP32 3.x / ESP-IDF 5.x. GPTimer programa pulsos.
  * USB 0..3 troca modo. Observe docs/extra_bancada.md e valide o timing.
  * TAP_UP=16 e EDGE=25 no TX antes do resistor; TAP_DOWN=26 na entrada RX.
- * DRIVE=27 -> resistor de base -> NPN. LOW no GPIO desliga o transistor.
+ * DRIVE=27 -> resistor de base 1k -> BC547 NPN; emissor ao GND comum.
+ * LOW no GPIO desliga o transistor. Conferir C/B/E do componente real.
  * Apenas payload/check sao sorteados. Nunca start/stop UART ou debug. */
 #include <Arduino.h>
 #include <Telemetry.h>
@@ -12,7 +13,7 @@
 #include "esp_random.h"
 using namespace telemetry;
 constexpr int DRIVE=27,EDGE=25,TAP_UP=16,TAP_DOWN=26;
-HardwareSerial upstream(1),downstream(2);
+HardwareSerial &upstream=Serial1,&downstream=Serial2;
 gptimer_handle_t pulseTimer=nullptr;
 struct PulseEvent {uint32_t at;bool on;};
 PulseEvent events[4]; uint8_t selected[8],count=0,eventCount=0,activeMode=0;
@@ -20,18 +21,25 @@ volatile uint8_t eventIndex=0;
 volatile bool armed=false,busy=false,pulseFinished=false,timingFault=false;
 volatile int64_t triggeredAt=0;
 uint8_t mode=0,up[14],down[14],un=0,dn=0;uint16_t seq=0;
-int64_t armedAt=0;
+int64_t armedAt=0,captureLastByte=0;
 // Trocar configuracao so entre quadros. Arrays ficam imutaveis enquanto busy.
 bool IRAM_ATTR alarmCallback(gptimer_handle_t timer,const gptimer_alarm_event_data_t* data,void*) {
   uint8_t i=eventIndex;
   if(i>=eventCount)return false;
   // Atraso grande invalida a tentativa; nunca oculte o problema no CSV.
-  if(data->count_value>events[i].at+3)timingFault=true;
+  if(data->count_value>events[i].at+3) {
+    // Aborta tentativa atrasada para nao estender LOW ao stop/debug.
+    timingFault=true;gpio_set_level((gpio_num_t)DRIVE,0);
+    gptimer_set_alarm_action(timer,nullptr);busy=false;return false;
+  }
   gpio_set_level((gpio_num_t)DRIVE,events[i].on?1:0);
   ++eventIndex;
   if(eventIndex<eventCount) {
     gptimer_alarm_config_t alarm={};alarm.alarm_count=events[eventIndex].at;
-    gptimer_set_alarm_action(timer,&alarm);
+    if(gptimer_set_alarm_action(timer,&alarm)!=ESP_OK) {
+      timingFault=true;gpio_set_level((gpio_num_t)DRIVE,0);
+      gptimer_set_alarm_action(timer,nullptr);busy=false;
+    }
   } else {gpio_set_level((gpio_num_t)DRIVE,0);busy=false;pulseFinished=true;}
   return false;
 }
@@ -45,6 +53,7 @@ void IRAM_ATTR bodyStart() {
 uint32_t bitTime(double bit){return uint32_t(bit*1000000.0/BAUD+0.5);}
 void prepare() {
   activeMode=mode;count=eventCount=0;timingFault=pulseFinished=false;
+  armed=false;armedAt=esp_timer_get_time();triggeredAt=0;
   if(activeMode==0)return;
   if(activeMode==3) {
     uint8_t byte=esp_random()%3,size=3+esp_random()%6,start=esp_random()%(9-size);
@@ -66,17 +75,28 @@ void prepare() {
   armedAt=esp_timer_get_time();armed=true;
 }
 void collectUp(uint8_t b) {
+  captureLastByte=esp_timer_get_time();
   if(!un){if(b==START0)up[un++]=b;return;}
   if(un==1 && b!=START1){un=b==START0?1:0;return;}
   up[un++]=b;
   if(un==5){seq=uint16_t(up[3])<<8|up[4];if(up[2]==LENGTH)prepare();}
 }
 void collectDown(uint8_t b) {
+  captureLastByte=esp_timer_get_time();
   if(!dn){if(b==START0)down[dn++]=b;return;}
   if(dn==1&&b!=START1){dn=b==START0?1:0;return;}
   down[dn++]=b;
 }
 void logComplete() {
+  // Nunca parear quadros diferentes ou uma referencia deslocada como alteracao.
+  bool paired=up[0]==START0 && up[1]==START1 && up[2]==LENGTH
+    && up[8]==DEBUG0 && up[9]==DEBUG1 && up[3]==up[10] && up[4]==up[11];
+  for(uint8_t k=0;k<5;++k)if(up[k]!=down[k])paired=false;
+  for(uint8_t k=8;k<14;++k)if(up[k]!=down[k])paired=false;
+  if(!paired) {
+    Serial.println("# CAPTURA_INVALIDA;cabecalho_referencia_ou_pareamento;reconciliar");
+    un=dn=0;armed=false;return;
+  }
   if(activeMode==0)Serial.printf("%u,0,-1,-1,0,na,na,na,BASELINE\n",seq);
   for(uint8_t k=0;k<count;++k) {
     uint8_t byte=5+selected[k]/8,bit=selected[k]%8;
@@ -88,7 +108,8 @@ void logComplete() {
 }
 void setup() {
   Serial.begin(115200);pinMode(DRIVE,OUTPUT);digitalWrite(DRIVE,LOW);pinMode(EDGE,INPUT);
-  upstream.begin(BAUD,SERIAL_8N1,TAP_UP,-1);downstream.begin(BAUD,SERIAL_8N1,TAP_DOWN,-1);
+  // -1 pode manter um TX anterior. Reserva saidas nao ligadas para evitar conflito.
+  upstream.begin(BAUD,SERIAL_8N1,TAP_UP,18);downstream.begin(BAUD,SERIAL_8N1,TAP_DOWN,19);
   upstream.setRxFIFOFull(1);upstream.setRxTimeout(1);downstream.setRxFIFOFull(1);downstream.setRxTimeout(1);
   gptimer_config_t config={};config.clk_src=GPTIMER_CLK_SRC_DEFAULT;config.direction=GPTIMER_COUNT_UP;config.resolution_hz=1000000;
   ESP_ERROR_CHECK(gptimer_new_timer(&config,&pulseTimer));
@@ -104,7 +125,7 @@ void loop() {
   while(downstream.available()&&dn<14)collectDown(uint8_t(downstream.read()));
   if(un==14&&dn==14&&!busy)logComplete();
   if(armed && esp_timer_get_time()-armedAt>FRAME_TIMEOUT_US){armed=false;timingFault=true;digitalWrite(DRIVE,LOW);}
-  if(un && !busy && esp_timer_get_time()-armedAt>ABSENCE_TIMEOUT_US) {
+  if((un||dn) && !busy && esp_timer_get_time()-captureLastByte>FRAME_TIMEOUT_US) {
     Serial.println("# CAPTURA_INCOMPLETA;reconciliar_e_descartar_rodada_piloto");un=dn=0;armed=false;
   }
 }

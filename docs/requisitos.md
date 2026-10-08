@@ -13,8 +13,8 @@ O usuario definiu a demonstracao fisica como EXTRA. Esta matriz preserva a disti
 | Lacunas, wrap, repetido, fora de ordem | especificacao + testes | teste de 65535->0, lacuna e repeticao | modelo testado; reconciliacao real pendente |
 | Timeout medido e recuperacao | extra + TX/RX | captura ou log real, justificativa, tempo em ms | valores iniciais; nao medidos |
 | UART2, 115200, GND, tres ESP32 | extra + firmware | montagem e captura | extra por orientacao do usuario |
-| NPN + resistor e LOW assimetrico | extra | foto/circuito e log alteracao real | extra; nao montado |
-| Modos 0..3 via Monitor Serial | noise.ino | troca sem regravar | prototipo pendente |
+| NPN + resistor e LOW assimetrico | extra | foto/circuito e log alteracao real | extra; estrutura iniciada, eletrica pendente |
+| Modos 0..3 via Monitor Serial | noise.ino | troca sem regravar | compilado; teste na placa pendente |
 | Pulso menor que byte; rajada no mesmo byte | noise.ino + especificacao | analisador logico confirma posicao/duracao | temporizacao pendente |
 | Timer adequado; sem delayMicroseconds | noise.ino | GPTimer e captura temporal | implementacao proposta |
 | Log ruido: seq/modo/bits/tempo/mudou | noise.ino | log cruzado com RX e TX | nao coletado |
@@ -26,7 +26,7 @@ O usuario definiu a demonstracao fisica como EXTRA. Esta matriz preserva a disti
 | Um erro nao detectado REAL byte a byte | roteiro + extra | TX hex + RX hex + log ruido + calculo | exemplo teorico pronto; real ausente |
 | Predicao individual dos proximos 10 | roteiro | previsoes anteriores e resultados | ensaio pendente |
 | Quebrar o proprio protocolo | roteiro + testes | padrao + algebra + evidencia exigida | colisao teorica SUM8 testada |
-| tx.ino, rx.ino, noise.ino compilaveis | firmware + compilar.ps1 | compilacao com versao/placa registradas | compilacao ESP32 nao executada |
+| tx.ino, rx.ino, noise.ino compilaveis | firmware + compilar.ps1 | compilacao com versao/placa registradas | tres compilados: ESP32 classico, core 3.3.12; ver validacao_codigo.md |
 | Autoria e dominio individual | contribuicoes + README | registro honesto e defesa pessoal | a construir pela equipe |
 
 Nota editorial: a linha 'OK' no PDF contem 'checagem indicou erro', embora diga 'aceitou'. Interpretacao consistente com o restante: OK significa checagem passou e payload correto. Explicitem isso no relatorio.

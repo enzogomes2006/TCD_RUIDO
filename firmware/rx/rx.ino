@@ -5,7 +5,7 @@
 #include <Telemetry.h>
 #include "esp_timer.h"
 using namespace telemetry;
-HardwareSerial link(2);
+HardwareSerial &uartLink=Serial2;
 Algorithm algorithm=SUM8; uint8_t mode=0;
 uint8_t buf[8],ref[6],n=0,dn=0,match=0;
 enum State { SEEK,FRAME,DEBUG }; State state=SEEK;
@@ -62,8 +62,8 @@ void consume(uint8_t b) {
   match=(b==START0||b==DEBUG0)?b:0;
 }
 void setup() {
-  Serial.begin(115200);link.setRxBufferSize(1024);
-  link.begin(BAUD,SERIAL_8N1,16,17);link.setRxFIFOFull(1);link.setRxTimeout(1);
+  Serial.begin(115200);uartLink.setRxBufferSize(1024);
+  uartLink.begin(BAUD,SERIAL_8N1,16,17);uartLink.setRxFIFOFull(1);uartLink.setRxTimeout(1);
   lastFrame=esp_timer_get_time();
   Serial.println("origem,tecnica,modo,seq,seq_recebida,residuo,decisao,payload_confere,status,verificacao_us,rx_hex");
 }
@@ -74,7 +74,7 @@ void loop() {
     if(c>='0'&&c<='3')mode=c-'0';
     if(c=='r') {resetParser();pending=checked=haveExpected=false;lastFrame=esp_timer_get_time();absenceLogged=false;}
   }
-  while(link.available())consume(uint8_t(link.read()));
+  while(uartLink.available())consume(uint8_t(uartLink.read()));
   int64_t now=esp_timer_get_time();
   if(state!=SEEK && now-lastByte>FRAME_TIMEOUT_US) {
     Serial.println("# TIMEOUT_PARCIAL;aguardar_referencia_ou_reconciliar_TX");

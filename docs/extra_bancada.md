@@ -4,7 +4,9 @@ Esta extensao esta separada da entrega principal a pedido do estudante. Se o pro
 
 ## Materiais e circuito proposto para revisar
 
-Tres ESP32 classicos com UART2 e GPIO16/17 livres; tres cabos USB; GND comum; transistor NPN 2N2222/PN2222 compativel; resistor serie da linha de 1 kohm; resistor de base proposto de 1 kohm; resistor base-emissor proposto de 10 kohm para mante-lo desligado; analisador logico/osciloscopio para validar pulsos.
+Atualizacao de 7/10/2026: o transistor disponivel e um BC547. O roteiro especifico das placas, pinagem e piloto esta em [montagem_bc547.md](montagem_bc547.md). O BC547 substitui o NPN proposto, respeitando sua propria pinagem; os pulsos precisam ser medidos com o componente real.
+
+Tres ESP32 classicos com UART2 e GPIO16/17 livres; tres cabos USB; GND comum; transistor NPN BC547 com pinagem conferida; resistor serie da linha de 1 kohm; resistor de base proposto de 1 kohm; resistor base-emissor proposto de 10 kohm para mante-lo desligado; analisador logico/osciloscopio para validar pulsos.
 Confirme a pinagem real do transistor pelo fabricante e a variante da placa. Nao conectar uma saida GPIO diretamente a outra saida para disputar niveis. O resistor serie limita a corrente quando NPN conduz; resistor de base tem funcao distinta.
 
 ```text
@@ -23,7 +25,7 @@ Valide HIGH/LOW no ponto B e largura dos pulsos com a montagem real antes de col
 
 ## Preparacao e limites importantes
 
-Compilar todos os sketches com a mesma biblioteca e registrar a versao Arduino-ESP32, placa/FQBN e commit. A compilacao contra ESP32 nao foi feita neste ambiente; `tools/compilar.ps1` e o comando de verificacao.
+Compilar todos os sketches com a mesma biblioteca e registrar a versao Arduino-ESP32, placa/FQBN e commit. Os tres foram compilados em 7/10/2026 com Arduino-ESP32 3.3.12 e `esp32:esp32:esp32`; consulte [validacao_codigo.md](validacao_codigo.md). `tools/compilar.ps1` reproduz a compilacao, sem gravar placas.
 O injetor usa GPTimer a 1 MHz, ISR de borda e eventos para ligar/desligar o NPN. Nao usa delayMicroseconds. Ter timer nao garante posicionamento: latencia de ISR, arredondamento e leitura UART devem ser medidos. TIMING_INVALIDO ou SEM_PULSO invalida a tentativa e exige corrigir o piloto.
 O instante registrado e o inicio do corpo observado pelo injetor, nao o instante exato de cada borda eletrica. Use a posicao planejada junto com captura para comprovar cada pulso.
 O sorteio e restrito aos 24 bits de dados dos bytes de payload/CHECK. Nao testa marcador/LEN/SEQ, start/stop ou perdas por enquadramento. Se a avaliacao exigir sorteio em todo o quadro, este prototipo precisa ser ampliado; nao declarar equivalencia.
@@ -41,7 +43,7 @@ Modo 3 une bits contiguos num pulso de aproximadamente 3..8 tempos de bit dentro
 
 ## Coleta de uma rodada
 
-Configurar RX: `r`, `s` ou `c`, e o modo `0`..`3` como metadado. Configurar injetor: modo correspondente. Configurar TX: `s` ou `c`; so depois enviar `g` para 1000 quadros. Nao trocar tecnica/modo no meio da rodada.
+Configurar RX: `r`, `s` ou `c`, e o modo `0`..`3` como metadado. Configurar injetor: modo correspondente. Configurar TX: `s` ou `c`; primeiro enviar `t` para o piloto de 20 quadros, e depois `g` para 1000 quadros. Nao trocar tecnica/modo no meio da rodada.
 Capturar os tres monitores simultaneamente por ao menos 110 segundos. O TX fica parado depois dos mil; reiniciar com `g` abre nova rodada a partir de seq=0. Separe arquivos por tecnica/modo/rodada.
 
 ```powershell

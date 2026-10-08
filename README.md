@@ -10,6 +10,8 @@ O PDF de atividade fornecido menciona experimentos reais e demonstracao ao vivo.
 
 ## Onde esta cada coisa
 
+Para validar a estrutura fisica iniciada com **BC547**, comece por [montagem_bc547.md](docs/montagem_bc547.md): posicoes das tres placas, ligacoes GPIO, dois resistores de 1 kohm e piloto de 20 quadros (`t` no TX).
+
 | Pasta | Conteudo |
 |---|---|
 | `output/pdf/` | Guia em PDF para preparar a entrega e a defesa |
@@ -52,13 +54,13 @@ Placa-alvo proposta: ESP32 classico, sem PSRAM ocupando GPIO16/17. O codigo usa 
 ```powershell
 # Instalar Arduino CLI do site oficial e o pacote Espressif, caso ainda nao existam.
 arduino-cli core update-index --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
-arduino-cli core install esp32:esp32 --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+arduino-cli core install esp32:esp32@3.3.12 --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
 powershell -ExecutionPolicy Bypass -File tools/compilar.ps1
 ```
 
 Alternativa Arduino IDE: adicionar a pasta `libraries/Telemetry` como biblioteca local e abrir cada sketch no seu diretorio de mesmo nome.
 
-**Verificacao feita aqui:** testes Python e nucleo C++ no computador. **Pendente:** compilacao dos tres sketches contra o pacote real de ESP32, gravacao nas placas, ajuste eletrico e validacao temporal. Nenhum resultado de bancada foi produzido. O injetor e um prototipo experimental, com limitacoes descritas no extra.
+**Verificacao feita em 7/10/2026:** nove testes Python, nucleo C++, cinco cenarios do sketch do injetor com dubles e compilacao dos tres sketches com Arduino CLI 1.5.1 / Arduino-ESP32 3.3.12 / `esp32:esp32:esp32`. Detalhes e memoria: [registro de validacao](docs/validacao_codigo.md). **Pendente:** gravacao nas placas, continuidade eletrica, pulsos e medicoes reais. Nenhum resultado de bancada foi produzido. O injetor continua experimental.
 
 ## Autoria e dados
 

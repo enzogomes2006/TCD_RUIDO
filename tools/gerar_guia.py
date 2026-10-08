@@ -34,6 +34,7 @@ styles.add(ParagraphStyle(name='CodeGuide',fontName='Courier',fontSize=8,leading
 def inline(s):
     s=html.escape(s)
     s=re.sub(r'\[([^]]+)\]\((https?://[^)]+)\)',r'<link href="\2" color="#167B88">\1</link>',s)
+    s=re.sub(r'\[([^]]+)\]\(([^)]+)\)',r'\1 (\2)',s)
     s=re.sub(r'\*\*([^*]+)\*\*',r'<b>\1</b>',s)
     s=re.sub(r'`([^`]+)`',r'<font name="Courier">\1</font>',s)
     return s
@@ -92,10 +93,10 @@ def main():
         Paragraph('Grupo de tres estudantes; defesa e nota individuais. Use este guia para estudar e executar, e escreva a analise com suas palavras. Este PDF nao substitui um relatorio final com evidencias autorais.',styles['TextMain']),
         Paragraph('Repositorio: <link href="https://github.com/enzogomes2006/TCD_RUIDO" color="#167B88">github.com/enzogomes2006/TCD_RUIDO</link>',styles['TextMain']),
         Spacer(1,18),Paragraph('Como navegar',styles['SubGuide']),
-        Paragraph('1. Roteiro de defesa de 20 minutos e demonstracoes teoricas.<br/>2. Especificacao proposta do protocolo.<br/>3. Estrutura editavel do relatorio.<br/>4. Matriz de requisitos e evidencias.<br/>5. Extra: bancada, piloto e coleta real.',styles['TextMain']),
+        Paragraph('1. Roteiro de defesa de 20 minutos e demonstracoes teoricas.<br/>2. Especificacao proposta do protocolo.<br/>3. Estrutura editavel do relatorio.<br/>4. Matriz de requisitos e evidencias.<br/>5. Extra: bancada, piloto e coleta real.<br/>6. Montagem BC547 e piloto de vinte quadros.<br/>7. Registro de validacao do codigo.',styles['TextMain']),
         Spacer(1,12),Paragraph('Escopo: a parte fisica e extra segundo a orientacao do estudante. O PDF original pede ruido real, medicoes e demo ao vivo. A matriz registra as evidencias que dependeriam desse escopo experimental.',styles['TextMain']),
-        Paragraph('Preparado em 4 de outubro de 2026 | versao inicial para revisao da equipe',styles['TextMain'])]
-    for file in ('roteiro.md','especificacao.md','relatorio_modelo.md','requisitos.md','extra_bancada.md'):
+        Paragraph('Atualizado em 7 de outubro de 2026 | BC547 e validacao do codigo',styles['TextMain'])]
+    for file in ('roteiro.md','especificacao.md','relatorio_modelo.md','requisitos.md','extra_bancada.md','montagem_bc547.md','validacao_codigo.md'):
         story.append(PageBreak());story.extend(markdown((ROOT/'docs'/file).read_text(encoding='utf-8')))
     story.extend([PageBreak(),Paragraph('Fontes e verificacao',styles['SectionGuide'])])
     sources=[
@@ -104,8 +105,9 @@ def main():
         '[UART e Arduino-ESP32 - Espressif](https://docs.espressif.com/projects/arduino-esp32/en/latest/api/serial.html)',
         '[GPTimer - Espressif](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/gptimer.html)',
         '[esp_timer - Espressif](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/esp_timer.html)',
-        'Verificacao: nove testes automatizados em Python e teste do nucleo C++ no computador. Vetor CRC F4, exemplos de residuo, colisao de dois MSBs, rajadas de ate oito bits, classificacao e sequencia.',
-        'Nao verificado: compilacao dos tres sketches no pacote ESP32, funcionamento eletrico, pulsos reais, tempos TX/RX e recuperacao em placa. Nenhuma tabela real foi preenchida.',
+        'Verificacoes de codigo, ferramentas, versoes e limites: consultar a secao Registro de validacao do codigo deste guia.',
+        'Nao verificado: funcionamento eletrico, pulsos reais, tempos TX/RX e recuperacao em placa. Nenhuma tabela real foi preenchida.',
+        '[BC547 - onsemi](https://www.onsemi.com/pdf/datasheet/bc546-d.pdf)',
         'O material teve apoio de IA. A regra do enunciado sobre trabalhos baseados em IA precisa ser observada pela equipe: o relatorio final, as contribuicoes e a defesa precisam refletir o aprendizado e a execucao dos estudantes.'
     ]
     for s in sources:story.append(Paragraph(inline(s),styles['TextMain']))
